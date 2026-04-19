@@ -14,19 +14,19 @@ def search_models(
     max_input_price: float | None = None,
     is_open_source: bool | None = None,
     provider: str | None = None,
-    limit: int = 8,
+    limit: int = 20,
 ) -> dict:
     """
     Search models by structured criteria.
 
     Args:
         category: Model type — "llm", "embedding", "image_gen", "tts". Default "llm".
-        capabilities: Required capabilities, e.g. ["vision", "reasoning", "function_calling"].
+        capabilities: Required capabilities. Options: reasoning, function_calling, structured_output, code, moe, fine_tuning, vision, audio_input.
         min_context: Minimum context window in tokens, e.g. 128000.
-        max_input_price: Max input price per 1M tokens in USD, e.g. 5.0.
+        max_input_price: Max input price per 1M tokens in USD, e.g. 5.0. Use 0.0 for free/open-source models.
         is_open_source: True to restrict to open-source models only.
         provider: Filter by provider name, e.g. "Anthropic", "OpenAI".
-        limit: Max results to return (default 8).
+        limit: Max results to return (default 20).
     """
     results = queries.search_models(
         category=category,
@@ -74,6 +74,17 @@ def compare_models(model_ids: list[str]) -> dict:
 def list_providers() -> dict:
     """List all available providers in the database."""
     return {"providers": queries.list_providers()}
+
+
+def set_recommendations(model_ids: list[str]) -> dict:
+    """
+    Declare the final recommended models in ranked order (best first).
+    Call this after searching to set which models appear as cards in the UI.
+
+    Args:
+        model_ids: Ordered list of model IDs to recommend, best first. Max 3.
+    """
+    return {"ok": True, "model_ids": model_ids}
 
 
 # ── Serialization helpers ─────────────────────────────────────────────────────
@@ -126,7 +137,7 @@ TOOL_DEFINITIONS = [
                     "capabilities": {
                         "type": "array",
                         "items": {"type": "string"},
-                        "description": "Required capabilities. Options: vision, reasoning, function_calling, audio_input, structured_output, code.",
+                        "description": "Required capabilities. Options: reasoning, function_calling, structured_output, code, moe, fine_tuning, vision, audio_input.",
                     },
                     "min_context": {
                         "type": "integer",
@@ -143,10 +154,6 @@ TOOL_DEFINITIONS = [
                     "provider": {
                         "type": "string",
                         "description": "Filter by provider name.",
-                    },
-                    "limit": {
-                        "type": "integer",
-                        "description": "Max results (default 8).",
                     },
                 },
                 "required": [],
@@ -196,6 +203,24 @@ TOOL_DEFINITIONS = [
             "parameters": {"type": "object", "properties": {}, "required": []},
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "set_recommendations",
+            "description": "Declare the final recommended models in ranked order. Call this after searching, before writing your response, to set which model cards appear in the UI. Best match first, max 3.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "model_ids": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Ordered list of model IDs to recommend, best first. Max 3.",
+                    }
+                },
+                "required": ["model_ids"],
+            },
+        },
+    },
 ]
 
 TOOL_DISPATCH: dict[str, callable] = {
@@ -203,4 +228,5 @@ TOOL_DISPATCH: dict[str, callable] = {
     "get_model_details": get_model_details,
     "compare_models": compare_models,
     "list_providers": list_providers,
+    "set_recommendations": set_recommendations,
 }

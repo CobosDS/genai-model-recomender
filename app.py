@@ -272,12 +272,17 @@ if prompt and _has_key and agent:
     full_reply = ""
 
     with st.chat_message("assistant"):
+        status = st.empty()
         placeholder = st.empty()
         for event, data in agent.stream(prompt):
-            if event == "models":
+            if event == "status":
+                status.markdown(f"_{data}_")
+            elif event == "models":
+                status.empty()
                 found_models = json.loads(data)
                 st.html(render_model_cards(found_models))
             elif event == "token":
+                status.empty()
                 full_reply += data
                 placeholder.markdown(full_reply + "▌")
         placeholder.markdown(full_reply)

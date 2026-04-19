@@ -101,13 +101,13 @@ def _get_benchmarks(conn: sqlite3.Connection, model_ids: list[str]) -> dict[str,
 def search_models(
     *,
     category: str = "llm",
-    capabilities: list[str] | None = None,       # e.g. ["vision", "reasoning"]
+    capabilities: list[str] | None = None,
     min_context: int | None = None,
     max_input_price: float | None = None,
     max_output_price: float | None = None,
     is_open_source: bool | None = None,
     provider: str | None = None,
-    limit: int = 10,
+    limit: int = 20,
     conn: sqlite3.Connection | None = None,
 ) -> list[ModelRow]:
     """
@@ -139,7 +139,6 @@ def search_models(
             conditions.append("LOWER(m.provider) = LOWER(?)")
             params.append(provider)
 
-        # Each capability must appear in the JSON capabilities column
         for cap in capabilities or []:
             conditions.append("m.capabilities LIKE ?")
             params.append(f'%"{cap}"%')
@@ -151,7 +150,7 @@ def search_models(
             FROM models m
             LEFT JOIN pricing p ON m.model_id = p.model_id
             WHERE {where}
-            ORDER BY p.input_per_1m ASC NULLS LAST
+            ORDER BY m.context_window DESC NULLS LAST
             LIMIT ?
             """,
             params + [limit],

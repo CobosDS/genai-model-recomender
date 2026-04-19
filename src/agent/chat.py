@@ -24,12 +24,17 @@ You are an expert AI model advisor helping developers choose the right model for
 Recommend the best model(s) from the database for the developer's needs.
 
 ## How to behave
+- If the message is not related to choosing or comparing AI models, reply exactly: "I can only help you choose the right AI model for your project. What are you building?"
 - If the developer's message is vague and missing critical info (use case OR budget), ask ONE focused question before searching.
 - If you have enough context, call search_models or other tools immediately — don't ask unnecessary questions.
+- After deciding which models to recommend, call set_recommendations with their IDs in ranked order (best first, max 3) before writing your response.
 - After getting tool results, give a direct recommendation with clear reasoning.
+- When the user says "no budget limit" or similar, prioritize the most capable and highest-performing models — do not default to open-source or free options unless the user asks for them.
 - Mention trade-offs honestly (cost spikes, latency, privacy, rate limits).
 - If the best option depends on a factor you don't know, say so and explain the two paths.
-- Only add capabilities filter if the user explicitly mentions them (vision, audio, reasoning...). Do NOT infer capabilities from the use case.
+- Use `capabilities` to filter by explicit technical requirements: vision (image input), audio_input, reasoning, function_calling, structured_output, code, moe, fine_tuning, math.
+- For use-case queries (code generation, customer support, RAG...), search without capability filters and reason over the returned descriptions to pick the best match.
+- When the user says "no budget limit" or similar, do NOT set max_input_price. Only set max_input_price when the user gives an explicit budget constraint.
 - If search returns fewer than 3 results, call search_models again with fewer or no filters to get more options.
 
 ## Critical fields (need at least one before recommending)
@@ -141,10 +146,12 @@ class ModelSelectorChat:
         self._offtopic_count = 0
         self.history.append({"role": "user", "content": user_message})
 
-        found_models: list[dict] = []
+        all_models: dict[str, dict] = {}
+        recommended_ids: list[str] = []
 
         # Run tool calls synchronously, capture model results
         while True:
+            yield ("status", "Searching...")
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[{"role": "system", "content": _SYSTEM}] + self.history,
@@ -157,11 +164,20 @@ class ModelSelectorChat:
                 tool_results = self._run_tools(msg.tool_calls)
                 self.history.extend(tool_results)
                 for tc, tr in zip(msg.tool_calls, tool_results):
+                    data = json.loads(tr["content"])
+                    print(f"[TOOL] {tc.function.name}({tc.function.arguments})")
                     if tc.function.name in ("search_models", "compare_models"):
-                        data = json.loads(tr["content"])
-                        found_models.extend(data.get("models", []))
+                        for m in data.get("models", []):
+                            all_models[m["model_id"]] = m
+                    elif tc.function.name == "set_recommendations":
+                        recommended_ids = data.get("model_ids", [])
             else:
                 break
+
+        if recommended_ids:
+            found_models = [all_models[mid] for mid in recommended_ids if mid in all_models]
+        else:
+            found_models = list(all_models.values())[:3]
 
         if found_models:
             yield ("models", json.dumps(found_models))
