@@ -121,7 +121,7 @@ body {
   <!-- 2. SYSTEM PROMPT + HISTORY -->
   <div class="node mauve">
     <div class="node-title">📋 The AI is given its role and the full conversation</div>
-    <div class="node-desc">Before answering, the AI receives a set of instructions that define how to behave — ask for clarification if something is missing, never invent models, always recommend from the database.</div>
+    <div class="node-desc">Before answering, the AI receives a set of instructions that define how to behave: ask for clarification if something is missing, never invent models, always recommend from the database.</div>
   </div>
   <div class="arrow">↓</div>
 
@@ -172,7 +172,7 @@ body {
   <!-- 5. STREAM -->
   <div class="node yellow">
     <div class="node-title">⚡ The AI writes its recommendation</div>
-    <div class="node-desc">The answer appears word by word as it's generated — you don't have to wait for the full response before starting to read.</div>
+    <div class="node-desc">The answer appears word by word as it's generated, so you don't have to wait for the full response before starting to read.</div>
   </div>
   <div class="arrow">↓</div>
 

@@ -60,10 +60,8 @@ st.markdown("""
 WELCOME = (
     "Hi! I'm your GenAI model recommender. Tell me about your project "
     "and I'll recommend the best model for your needs.\n\n"
-    "To get started, share:\n"
-    "- **What are you building?** (chatbot, classifier, code generation...)\n"
-    "- **What data does it handle?** (text, images, audio...)\n"
-    "- **What's your budget?** (free, cheap, no limit...)"
+    "To get started, tell me **what you're building**, "
+    "**what data it handles**, and **what your budget is**."
 )
 
 QUICK_STARTS = [

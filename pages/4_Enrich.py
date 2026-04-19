@@ -108,9 +108,7 @@ body {
   <div class="node yellow">
     <div class="node-title">🔍 What information is incomplete?</div>
     <div class="node-desc">
-      The agent skips models that are already fully documented. It flags a model if any of these are missing:
-      <br>· A proper description (at least two sentences)
-      <br>· Strengths, use cases, or who it's ideal for
+      The agent skips models that are already fully documented. It flags a model if the description, strengths, use cases, or ideal audience are missing or too thin.
     </div>
   </div>
   <div class="arrow">↓</div>
@@ -118,7 +116,7 @@ body {
   <!-- 3. PROMPT -->
   <div class="node mauve">
     <div class="node-title">📝 Prepare the AI's instructions</div>
-    <div class="node-desc">The agent gathers everything already known about the model and tells the AI exactly which fields need filling — so it never overwrites good existing data.</div>
+    <div class="node-desc">The agent gathers everything already known about the model and tells the AI exactly which fields need filling, without overwriting good existing data.</div>
   </div>
   <div class="arrow">↓</div>
 
@@ -152,14 +150,14 @@ body {
   <!-- 6. PARSE -->
   <div class="node yellow">
     <div class="node-title">📤 AI writes the missing fields</div>
-    <div class="node-desc">The AI produces a structured response with each missing field filled in — description, strengths, use cases, and who the model is ideal for.</div>
+    <div class="node-desc">The AI produces a structured response with each missing field filled in: description, strengths, use cases, and who the model is ideal for.</div>
   </div>
   <div class="arrow">↓</div>
 
   <!-- 7. MERGE -->
   <div class="node green">
     <div class="node-title">🔀 Update the model's record</div>
-    <div class="node-desc">The new information is merged carefully into the existing record. Fields already populated are never overwritten — only gaps are filled.</div>
+    <div class="node-desc">The new information is merged carefully into the existing record. Fields already populated are never overwritten; only gaps are filled.</div>
     <div class="merge-grid">
       <div class="merge-cell">
         <div class="label">Fill if empty</div>
@@ -319,7 +317,7 @@ td { padding: 0.45rem 1rem; font-size: 0.8rem; vertical-align: middle; }
 <body>
 
 <div>
-  <div class="section-label" style="margin-bottom:0.8rem">Field coverage — 289 models</div>
+  <div class="section-label" style="margin-bottom:0.8rem">Field coverage: 289 models</div>
   <table>
     <thead>
       <tr><th>Field</th><th style="text-align:right">Before</th><th style="text-align:right">After</th><th style="text-align:right">Gain</th><th></th></tr>
@@ -412,7 +410,7 @@ td { padding: 0.45rem 0.8rem; font-size: 0.75rem; vertical-align: top; line-heig
 
 <!-- Header -->
 <div>
-  <div class="section-label">Accuracy — 11 LLM models sampled across 8 providers</div>
+  <div class="section-label">Accuracy: 11 LLM models sampled across 8 providers</div>
   <div class="model-header">
     <span class="model-pill pill-old">gpt-4o-mini</span>
     <span class="pill-arrow">→</span>
@@ -460,7 +458,7 @@ td { padding: 0.45rem 0.8rem; font-size: 0.75rem; vertical-align: top; line-heig
 
 <!-- Diff table -->
 <div>
-  <div class="section-label">What changed — model by model</div>
+  <div class="section-label">What changed, model by model</div>
   <table>
     <thead>
       <tr><th>Model</th><th>Field</th><th>gpt-4o-mini</th><th>gpt-5.4-mini</th><th></th></tr>
@@ -498,14 +496,14 @@ td { padding: 0.45rem 0.8rem; font-size: 0.75rem; vertical-align: top; line-heig
         <td class="model-id">mistral-large-2512</td>
         <td><span class="field-tag">capabilities</span><br><span class="field-tag">use_cases</span></td>
         <td class="val-old">caps: [function_calling, structured_output, code] · use cases: chatbot, content generation</td>
-        <td class="val-new">caps: adds moe, multilingual · use cases: long-context docs, tool use, code — more specific and accurate</td>
+        <td class="val-new">caps: adds moe, multilingual · use cases: long-context docs, tool use, code (more specific and accurate)</td>
         <td><span class="verdict-badge badge-improved">Improved</span></td>
       </tr>
       <tr>
         <td class="model-id">deepseek-chat<br>deepseek-reasoner<br>gemini-3.1-pro</td>
         <td><span class="field-tag">strengths</span><br><span class="field-tag">use_cases</span></td>
         <td class="val-old">Generic phrasing, some marketing copy</td>
-        <td class="val-new">More concrete and specific — actual use cases, no change in factual accuracy</td>
+        <td class="val-new">More concrete and specific: actual use cases, no change in factual accuracy</td>
         <td><span class="verdict-badge badge-improved">Improved</span></td>
       </tr>
     </tbody>
@@ -520,7 +518,7 @@ td { padding: 0.45rem 0.8rem; font-size: 0.75rem; vertical-align: top; line-heig
       <div class="why-title">Better knowledge of the model taxonomy</div>
       gpt-4o-mini was confused about newer models from its own family (described gpt-4o-mini as a fine-tune,
       missed function_calling on command models). gpt-5.4-mini has more reliable internal knowledge about which
-      models support which features — fewer gaps in capabilities and fewer wrong descriptions.
+      models support which features, with fewer gaps in capabilities and fewer wrong descriptions.
     </div>
     <div class="why-card green">
       <div class="why-title">Less likely to copy generic text</div>
@@ -539,10 +537,10 @@ st.divider()
 st.subheader("Agent flow")
 st.html(FLOW_HTML)
 st.divider()
-st.subheader("Coverage — before vs after enrichment")
+st.subheader("Coverage: before vs after enrichment")
 st.html(COVERAGE_HTML)
 st.divider()
-st.subheader("Accuracy — sampling analysis")
+st.subheader("Accuracy: sampling analysis")
 st.html(ACCURACY_HTML)
 st.divider()
 st.subheader("Before / after examples")

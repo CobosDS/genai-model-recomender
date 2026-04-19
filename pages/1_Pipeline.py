@@ -138,11 +138,11 @@ DIAGRAM_HTML = """
 </head>
 <body>
 
-<p class="subtitle">From provider docs to structured model data — automated, enriched, and queryable</p>
+<p class="subtitle">From provider docs to structured model data: automated, enriched, and queryable</p>
 
 <!-- ── 1. SOURCES ── -->
 <div class="layer accent-blue">
-  <div class="layer-title">📡 Data Sources — 9 providers</div>
+  <div class="layer-title">📡 Data Sources: 9 providers</div>
   <div class="providers">
     <div class="provider">
       <span class="badge" style="background:#10a37f">O</span>
@@ -214,7 +214,7 @@ DIAGRAM_HTML = """
 
 <!-- ── 3. TRANSFORM ── -->
 <div class="layer accent-mauve">
-  <div class="layer-title">🔄 Transform — raw markdown → ModelRecord</div>
+  <div class="layer-title">🔄 Transform: raw markdown to ModelRecord</div>
   <div class="steps">
     <div class="step">
       <div class="step-icon">📋</div>
@@ -225,7 +225,7 @@ DIAGRAM_HTML = """
     <div class="step">
       <div class="step-icon">🏷️</div>
       <div class="step-name">Category derivation</div>
-      <div class="step-desc">llm / embedding / image_gen / tts / realtime — inferred from input+output modalities.</div>
+      <div class="step-desc">llm / embedding / image_gen / tts / realtime, inferred from input and output modalities.</div>
       <span class="step-tag">deterministic</span>
     </div>
   </div>
@@ -240,26 +240,14 @@ DIAGRAM_HTML = """
     <div class="step">
       <div class="step-icon">✨</div>
       <div class="step-name">Enrich Agent</div>
-      <div class="step-desc">GPT-4o-mini fills missing fields: description, strengths, use cases. Grounded with Brave Search.</div>
-      <span class="step-tag">tool use</span>
+      <div class="step-desc">Fills missing fields per model: description, strengths, use cases and ideal audience. Uses web search when its internal knowledge is insufficient.</div>
+      <span class="step-tag">tool use · gpt-5.4-mini</span>
     </div>
     <div class="step">
-      <div class="step-icon">📊</div>
-      <div class="step-name">Benchmark Agent</div>
-      <div class="step-desc">Scrapes artificialanalysis.ai via RSC payload decoding. Token-based fuzzy matching to link model IDs.</div>
-      <span class="step-tag">MMLU · GPQA · HLE · AIME</span>
-    </div>
-    <div class="step">
-      <div class="step-icon">👻</div>
-      <div class="step-name">Staleness Agent</div>
-      <div class="step-desc">Compares current provider listings against the DB and flags models that have disappeared.</div>
-      <span class="step-tag">deprecation</span>
-    </div>
-    <div class="step">
-      <div class="step-icon">🔍</div>
-      <div class="step-name">Quality Agent</div>
-      <div class="step-desc">LLM scans enriched records for inconsistencies: inverted pricing, out-of-range benchmarks, missing fields.</div>
-      <span class="step-tag">validation</span>
+      <div class="step-icon">🔭</div>
+      <div class="step-name">Discovery Agent</div>
+      <div class="step-desc">Runs daily per provider. Detects new model IDs on the docs page and flags structural changes that could break the extractors.</div>
+      <span class="step-tag">Jina Reader · gpt-4.1-mini</span>
     </div>
   </div>
 </div>
@@ -310,7 +298,7 @@ DIAGRAM_HTML = """
     <div class="step">
       <div class="step-icon">🧠</div>
       <div class="step-name">GPT-4.1-mini</div>
-      <div class="step-desc">Conversational agent — asks one clarifying question if needed, then queries DB directly.</div>
+      <div class="step-desc">Conversational agent that asks one clarifying question if needed, then queries the database directly.</div>
       <span class="step-tag">off-topic guard</span>
     </div>
     <div class="step">

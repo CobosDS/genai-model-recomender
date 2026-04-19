@@ -79,14 +79,14 @@ body {
   <!-- 1. TRIGGER -->
   <div class="node blue">
     <div class="node-title">⏰ Runs once a day per provider</div>
-    <div class="node-desc">The agent checks each of the 8 providers — Anthropic, OpenAI, Google, Mistral, Cohere, DeepSeek, Meta, xAI — against what was last extracted.</div>
+    <div class="node-desc">The agent checks each of the 8 providers (Anthropic, OpenAI, Google, Mistral, Cohere, DeepSeek, Meta, xAI) against what was last extracted.</div>
   </div>
   <div class="arrow">↓</div>
 
   <!-- 2. FETCH -->
   <div class="node yellow">
     <div class="node-title">🌐 Fetches the current docs page</div>
-    <div class="node-desc">Downloads the provider's model listing page as clean text using Jina Reader — the same source the extractors use.</div>
+    <div class="node-desc">Downloads the provider's model listing page as clean text using Jina Reader, the same source the extractors use.</div>
   </div>
   <div class="arrow">↓</div>
 
@@ -95,7 +95,7 @@ body {
     <div class="check-box yellow">
       <div class="title">🏗️ Structural check</div>
       <div class="desc">
-        Looks for key markers in the page — known model names, price headers, section titles.
+        Looks for key markers in the page: known model names, price headers, section titles.
         If they disappear, the page layout changed and the extractor regex will likely break.
         Also flags if the page shrank or grew by more than 40%.
       </div>
@@ -131,7 +131,7 @@ body {
   <!-- 5. ACTION -->
   <div class="node teal">
     <div class="node-title">📬 Results available for review</div>
-    <div class="node-desc">The report flags what changed — a human decides whether to re-run the full pipeline for that provider to ingest the new models.</div>
+    <div class="node-desc">The report flags what changed. A human decides whether to re-run the full pipeline for that provider to ingest the new models.</div>
   </div>
 
 </div>
