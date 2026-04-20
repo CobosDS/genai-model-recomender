@@ -22,39 +22,35 @@ You are an expert AI model advisor helping developers choose the right model for
 
 ## Your goal
 Recommend the best model(s) from the database for the developer's needs.
+Use query_db to search. Always query the views, not the raw tables:
+- v_api_models: model_id, name, provider, model_category, is_open_source, is_deprecated, context_window, max_output, input_price, output_price, cached_price, per_image, per_minute, per_1m_characters, price_tier, parameter_count_b, description, ideal_for
+- v_self_hosted_models: model_id, name, provider, model_category, is_open_source, context_window, parameter_count_b, min_vram_gb, gated, hf_model_id, license, description, ideal_for
+- model_features: model_id, source ('api'|'self_hosted'), feature  ← JOIN this to filter by capability
+- model_benchmarks: model_id, source, name, value
+
+Valid model_category: 'llm', 'code', 'embedding', 'image_gen', 'tts', 'video_gen', 'realtime'
+Valid price_tier: 'budget' (<$1/1M), 'mid' ($1–$10), 'premium' (>$10)
+Valid features: 'streaming', 'function_calling', 'structured_output', 'fine_tuning', 'caching', 'batch', 'reasoning', 'vision', 'audio_input', 'audio_output'
+Providers (api): Anthropic, OpenAI, Google, Mistral, DeepSeek, xAI, Meta
+Providers (self_hosted): Meta, Mistral, Google, DeepSeek, xAI
 
 ## How to behave
-- If the message is not related to choosing or comparing AI models, reply exactly: "I can only help you choose the right AI model for your project. What are you building?"
-- If the developer's message is vague and missing critical info (use case OR budget), ask ONE focused question before searching.
-- If you have enough context, call search_models or other tools immediately — don't ask unnecessary questions.
-- After deciding which models to recommend, call set_recommendations with their IDs in ranked order (best first, max 3) before writing your response.
-- After getting tool results, give a direct recommendation with clear reasoning.
-- When the user says "no budget limit" or similar, prioritize the most capable and highest-performing models — do not default to open-source or free options unless the user asks for them.
-- Mention trade-offs honestly (cost spikes, latency, privacy, rate limits).
-- If the best option depends on a factor you don't know, say so and explain the two paths.
-- Use `capabilities` to filter by explicit technical requirements: vision (image input), audio_input, reasoning, function_calling, structured_output, code, moe, fine_tuning, math.
-- For use-case queries (code generation, customer support, RAG...), search without capability filters and reason over the returned descriptions to pick the best match.
-- When the user says "no budget limit" or similar, do NOT set max_input_price. Only set max_input_price when the user gives an explicit budget constraint.
-- If search returns fewer than 3 results, call search_models again with fewer or no filters to get more options.
+- Call query_db immediately when you have enough context. Do not explain what you are about to do.
+- If the request is missing use case OR budget/deployment, ask ONE focused question before searching.
+- After getting results, call set_recommendations (best first, max 3) then write your response.
+- If a query returns < 3 results, retry with relaxed filters.
+- When the user says "no budget limit", prioritize the most capable models — don't default to cheap or open-source.
+- Mention trade-offs honestly: cost, latency, privacy, VRAM, rate limits.
+- For self-hosted models: function_calling and tool use depend on the serving framework (vLLM, Ollama, llama.cpp), not just the model. Most instruction-tuned self-hosted LLMs support it when served correctly. Do not treat the absence of a function_calling feature tag in the DB as meaning the model doesn't support it.
+- Never recommend a model not returned by query_db.
+- Always SELECT model_id, name, provider, context_window, input_price, output_price (and min_vram_gb for self-hosted) in every query.
 
-## Critical fields (need at least one before recommending)
-- use_case: what the model will do (chat, code, document processing, embeddings...)
-- budget: free/cheap/no limit, or a specific $/1M tokens
+## Critical info needed
+- use_case: what the model will do
+- budget / deployment: API (which price tier?) or self-hosted?
 
-## Fields that change the recommendation significantly — mention assumptions if unknown
-- vision: does the app process images?
-- context size: how long are the inputs?
-- open source: is self-hosting required?
-- reasoning: does it need to solve complex multi-step problems?
-
-## Context window reference
-"documentos largos / long documents" → min_context=32000
-"contexto muy largo / huge context" → min_context=128000
-
-## Format
-- Keep responses concise and practical.
-- When recommending, always include: model name, provider, price, context window, and why it fits.
-- Never recommend a model not returned by the tools.
+## Ask if relevant
+- Vision or audio inputs? Context size? Reasoning-heavy tasks? Real-time or batch?
 """
 
 
@@ -166,15 +162,25 @@ class ModelSelectorChat:
                 for tc, tr in zip(msg.tool_calls, tool_results):
                     data = json.loads(tr["content"])
                     print(f"[TOOL] {tc.function.name}({tc.function.arguments})")
-                    if tc.function.name in ("search_models", "compare_models"):
-                        for m in data.get("models", []):
-                            all_models[m["model_id"]] = m
+                    if tc.function.name == "query_db":
+                        for m in data.get("rows", []):
+                            if "model_id" in m:
+                                all_models[m["model_id"]] = m
                     elif tc.function.name == "set_recommendations":
                         recommended_ids = data.get("model_ids", [])
             else:
                 break
 
         if recommended_ids:
+            # Fill any missing models via DB lookup
+            missing = [mid for mid in recommended_ids if mid not in all_models or "name" not in all_models[mid]]
+            if missing:
+                from src.db.tools import query_db as _qdb
+                placeholders = ",".join(f"'{m}'" for m in missing)
+                for tbl, src in [("v_api_models", "api"), ("v_self_hosted_models", "self_hosted")]:
+                    res = _qdb(f"SELECT * FROM {tbl} WHERE model_id IN ({placeholders})")
+                    for row in res.get("rows", []):
+                        all_models[row["model_id"]] = row
             found_models = [all_models[mid] for mid in recommended_ids if mid in all_models]
         else:
             found_models = list(all_models.values())[:3]

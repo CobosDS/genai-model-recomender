@@ -58,10 +58,14 @@ st.markdown("""
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 WELCOME = (
-    "Hi! I'm your GenAI model recommender. Tell me about your project "
-    "and I'll recommend the best model for your needs.\n\n"
-    "To get started, tell me **what you're building**, "
-    "**what data it handles**, and **what your budget is**."
+    "Hi! I'm your GenAI model recommender. I search a database of 288 models "
+    "across 9 providers and recommend the best fit for your project.\n\n"
+    "To get a good recommendation, tell me:\n\n"
+    "**What are you building?** A chatbot, a code assistant, document processing, "
+    "image analysis...\n\n"
+    "**What's your budget?** Free and self-hosted, cheap API, or no limit.\n\n"
+    "The more context you give (latency needs, data privacy, expected volume) "
+    "the better the recommendation."
 )
 
 QUICK_STARTS = [
@@ -102,25 +106,30 @@ def render_model_card(m: dict, rank: int) -> str:
     rank_label = rank_labels.get(rank, f"#{rank}")
 
     ctx = _ctx_str(m.get("context_window"))
-    inp = m.get("input_per_1m")
-    out = m.get("output_per_1m")
+    inp = m.get("input_price") or m.get("input_per_1m")
+    out = m.get("output_price") or m.get("output_per_1m")
     is_oss = m.get("is_open_source")
 
-    if is_oss and inp == 0.0:
-        price_html = '<span class="mc-price free">Free · self-hosted</span>'
+    vram = m.get("min_vram_gb")
+    if vram is not None:
+        price_html = f'<span class="mc-price free">Self-hosted · {vram:.0f} GB VRAM</span>'
+    elif inp == 0.0:
+        price_html = '<span class="mc-price free">Free API</span>'
     elif inp is not None:
-        price_html = f'<span class="mc-price paid">${inp:.2f} in / ${out:.2f} out per 1M</span>'
+        out_str = f"/ ${out:.2f} out" if out is not None else ""
+        price_html = f'<span class="mc-price paid">${inp:.2f} in {out_str} per 1M</span>'
     else:
         price_html = '<span class="mc-price">—</span>'
 
-    caps = m.get("capabilities") or []
-    caps_html = "".join(f'<span class="mc-cap">{c}</span>' for c in caps) if caps else ""
+    caps = m.get("features") or m.get("capabilities") or []
+    caps_html = "".join(f'<span class="mc-cap">{c}</span>' for c in caps[:4]) if caps else ""
 
-    desc = m.get("description") or ""
-    desc_html = f'<div class="mc-desc">{desc}</div>' if desc else ""
+    desc_html = ""
 
     provider = m.get("provider") or ""
     oss_tag = " · open-source" if is_oss else ""
+    license_str = m.get("license") or ""
+    license_html = f'<span class="mc-cap">{license_str}</span>' if license_str else ""
 
     return f"""
     <div class="mc {rank_class}">
@@ -131,7 +140,7 @@ def render_model_card(m: dict, rank: int) -> str:
         <div class="mc-specs">
             <div class="mc-spec">Context <b>{ctx}</b></div>
         </div>
-        {"<div class='mc-caps'>" + caps_html + "</div>" if caps_html else ""}
+        {"<div class='mc-caps'>" + license_html + caps_html + "</div>" if (license_html or caps_html) else ""}
         {desc_html}
     </div>
     """
