@@ -58,23 +58,17 @@ st.markdown("""
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 WELCOME = (
-    "Hi! I'm your GenAI model recommender. I search a database of 288 models "
-    "across 9 providers and recommend the best fit for your project.\n\n"
-    "To get a good recommendation, tell me:\n\n"
-    "**What are you building?** A chatbot, a code assistant, document processing, "
-    "image analysis...\n\n"
-    "**What's your budget?** Free and self-hosted, cheap API, or no limit.\n\n"
-    "The more context you give (latency needs, data privacy, expected volume) "
-    "the better the recommendation."
+    "Hey! I help developers pick the right AI model for their project, "
+    "whether that's an API you pay per token or an open-weight model you run yourself.\n\n"
+    "To give you a useful recommendation I need to understand your situation a bit. "
+    "The more you tell me, the better the match:\n\n"
+    "**What are you building?** A chatbot, a coding assistant, document processing, image analysis, voice...\n\n"
+    "**How do you want to run it?** Via API, or self-hosted on your own hardware?\n\n"
+    "**What's your budget?** A rough sense: cost-sensitive, comfortable spending, or no constraint.\n\n"
+    "Anything else that matters to you, like latency, privacy, context length or reasoning ability, "
+    "just mention it and I'll factor it in."
 )
 
-QUICK_STARTS = [
-    "Cheap model for a customer support chatbot",
-    "Free open-source LLM for text classification",
-    "Best model for code generation, no budget limit",
-    "Vision model to process invoice images",
-    "Fastest model for real-time chat under $1/1M tokens",
-]
 
 # ── Session state ─────────────────────────────────────────────────────────────
 if "model" not in st.session_state:
@@ -110,14 +104,22 @@ def render_model_card(m: dict, rank: int) -> str:
     out = m.get("output_price") or m.get("output_per_1m")
     is_oss = m.get("is_open_source")
 
-    vram = m.get("min_vram_gb")
+    vram       = m.get("min_vram_gb")
+    per_image  = m.get("per_image")
+    per_min    = m.get("per_minute")
+    per_chars  = m.get("per_1m_characters")
+
     if vram is not None:
         price_html = f'<span class="mc-price free">Self-hosted · {vram:.0f} GB VRAM</span>'
-    elif inp == 0.0:
-        price_html = '<span class="mc-price free">Free API</span>'
+    elif per_image is not None:
+        price_html = f'<span class="mc-price paid">${per_image:.3f} per image</span>'
+    elif per_min is not None:
+        price_html = f'<span class="mc-price paid">${per_min:.2f} per minute</span>'
+    elif per_chars is not None:
+        price_html = f'<span class="mc-price paid">${per_chars:.2f} per 1M chars</span>'
     elif inp is not None:
-        out_str = f"/ ${out:.2f} out" if out is not None else ""
-        price_html = f'<span class="mc-price paid">${inp:.2f} in {out_str} per 1M</span>'
+        out_str = f" / ${out:.2f} out" if out is not None else ""
+        price_html = f'<span class="mc-price paid">${inp:.2f} in{out_str} per 1M</span>'
     else:
         price_html = '<span class="mc-price">—</span>'
 
@@ -137,9 +139,7 @@ def render_model_card(m: dict, rank: int) -> str:
         <div class="mc-name">{m.get("name") or m.get("model_id")}</div>
         <div class="mc-provider">{provider}{oss_tag}</div>
         {price_html}
-        <div class="mc-specs">
-            <div class="mc-spec">Context <b>{ctx}</b></div>
-        </div>
+        {"<div class='mc-specs'><div class='mc-spec'>Context <b>" + ctx + "</b></div></div>" if m.get("context_window") else ""}
         {"<div class='mc-caps'>" + license_html + caps_html + "</div>" if (license_html or caps_html) else ""}
         {desc_html}
     </div>
@@ -204,51 +204,39 @@ with st.sidebar:
 st.title("🤖 GenAI Model Recommender")
 st.divider()
 
-# Quick start chips (only on first message)
+# Quick filters (always visible on first message)
 if len(st.session_state.messages) == 1:
-    st.markdown("**Quick starts:**")
-    cols = st.columns(len(QUICK_STARTS))
-    for col, label in zip(cols, QUICK_STARTS):
-        if col.button(label, use_container_width=True):
-            st.session_state.quick_start = label
-
     with st.expander("🔍 Quick filters"):
         col1, col2, col3 = st.columns(3)
         with col1:
-            budget = st.select_slider(
-                "Max input price ($/1M tokens)",
-                options=["free", "$0.5", "$1", "$2", "$5", "$10", "no limit"],
-                value="no limit",
+            price_tier = st.selectbox(
+                "Price tier",
+                ["Any", "budget (< $1/1M)", "mid ($1–$10/1M)", "premium (> $10/1M)"],
             )
             min_ctx = st.selectbox(
                 "Minimum context window",
-                ["Any", "8k+", "32k+", "128k+", "200k+", "1M+"],
+                ["Any", "32k+", "128k+", "200k+", "1M+"],
             )
         with col2:
-            capabilities = st.multiselect(
-                "Required capabilities",
-                ["vision", "reasoning", "function_calling", "audio_input", "code", "structured_output"],
+            features = st.multiselect(
+                "Required features",
+                ["vision", "reasoning", "function_calling", "structured_output", "audio_input", "fine_tuning", "caching"],
             )
-            provider_filter = st.text_input("Provider", placeholder="e.g. Anthropic, OpenAI")
+            provider_filter = st.text_input("Provider", placeholder="e.g. Anthropic, OpenAI, Mistral")
         with col3:
-            open_source_only = st.checkbox(
-                "Open-source only",
-                disabled=bool(provider_filter),
-            )
-            if provider_filter:
-                st.caption("_Open-source filter disabled when provider is set._")
+            deployment = st.radio("Deployment", ["API", "Self-hosted", "Any"])
             if st.button("Search with filters", use_container_width=True, type="primary"):
                 parts = []
-                if budget != "no limit":
-                    parts.append(f"budget: {budget} per 1M tokens")
+                if price_tier != "Any":
+                    parts.append(f"price tier: {price_tier.split(' ')[0]}")
                 if min_ctx != "Any":
                     parts.append(f"minimum context window: {min_ctx}")
-                if capabilities:
-                    parts.append(f"required capabilities: {', '.join(capabilities)}")
+                if features:
+                    parts.append(f"required features: {', '.join(features)}")
                 if provider_filter:
                     parts.append(f"provider: {provider_filter}")
-                elif open_source_only:
-                    parts.append("open-source only, free to self-host")
+                if deployment != "Any":
+                    parts.append(f"deployment: {deployment.lower()}")
                 if parts:
                     st.session_state.quick_start = "I need a model with: " + "; ".join(parts)
 
