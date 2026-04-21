@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-_DEFAULT_DB = _REPO_ROOT.parent / "llm-etl" / "data" / "db" / "models.db"
+_DEFAULT_DB = _REPO_ROOT / "data" / "models.db"
 DB_PATH = Path(os.getenv("DB_PATH", str(_DEFAULT_DB)))
 
 _MAX_ROWS = 60
